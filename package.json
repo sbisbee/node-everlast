@@ -1,0 +1,17 @@
+{
+  "name": "esup",
+  "version": "0.0.0",
+  "description": "Erlang inspired supervisor for Node.js.",
+  "main": "index.js",
+  "author": "Sam Bisbee <sam@sbisbee.com (http://www.sbisbee.com)",
+  "license": "apache",
+
+  "dependencies": {},
+  "devDependencies": {
+    "mocha": "1.21.x"
+  },
+
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha ./tests"
+  }
+}
