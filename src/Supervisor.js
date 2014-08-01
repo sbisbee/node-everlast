@@ -28,13 +28,30 @@ var CHILD_STATES = {
  */
 //TODO document events' args
 var Supervisor = function(opts) {
-  var self = this;
+  var onStopped = function(ref) {
+    var err;
+    var fun;
 
-  var onStop = function(ref) {
-    var err = self.deleteChild(ref.idx);
+    this.emit('debug', [ 'onStopped', ref.idx, this.children[ref.idx].state ]);
 
-    if(typeof err === 'object') {
-      throw err;
+    switch(this.children[ref.idx].state) {
+      case CHILD_STATES.stopped:
+        fun = this.deleteChild;
+        break;
+
+      case CHILD_STATES.restarting:
+        fun = this.startChild;
+        break;
+
+      default:
+        this.emit('error', new Error('onStopped unexpected event state'));
+        return;
+    }
+
+    err = fun.call(this, ref.idx);
+
+    if(err) {
+      this.emit('error', err);
     }
   };
 
@@ -47,49 +64,73 @@ var Supervisor = function(opts) {
   this.maxRetries = opts.maxRetries || 3;
   this.maxTime = opts.maxTime = 3;
 
-  this.on('stopped', onStop);
+  this.on('stopped', onStopped.bind(this));
 };
 
 util.inherits(Supervisor, EventEmitter);
 
 /*
- * On success, returns the child's index
+ * On success, returns false
  * On failure, returns Error
  */
 Supervisor.prototype.startChild = function(spec) {
   var args;
   var idx;
-  var self = this;
 
-  if(!this.checkChildSpecs([spec])) {
+  var onExit = function(code, signal) {
+    if(this.children[idx].state !== CHILD_STATES.restarting) {
+      this.children[idx].state = CHILD_STATES.stopped;
+    }
+
+    this.emit('stopped',
+      { id: this.children[idx].id, idx: idx },
+      { code: code, signal: signal });
+  };
+
+  if(typeof spec === 'number') {
+    //restarting
+    idx = spec;
+
+    if(!this.children[idx]) {
+      return new Error('Child not found');
+    }
+    else if(this.children[idx].state !== CHILD_STATES.restarting) {
+      return new Error('That child is not restarting');
+    }
+
+    this.children[idx].process.removeAllListeners();
+    this.children[idx].process = null;
+  }
+  else if(this.checkChildSpecs([ spec ])) {
+    idx = this.children.push(spec) - 1;
+    this.children[idx].state = CHILD_STATES.starting;
+  }
+  else {
     return new Error('Invalid spec');
   }
 
-  spec.state = CHILD_STATES.starting;
-  idx = this.children.push(spec) - 1;
+  //shouldn't be using local spec from now on - can makes things confusing
+  spec = null;
 
-  this.emit('starting', { id: spec.id });
+  this.emit('starting', { id: this.children[idx].id });
 
-  args = [ spec.path ];
+  args = [ this.children[idx].path ];
   
-  if(spec.args) {
-    args = args.concat(spec.args);
+  if(this.children[idx].args) {
+    args = args.concat(this.children[idx].args);
   }
 
-  spec.process = spawn('node', args, { stdio: 'ignore' });
-
-  spec.process.on('exit', function(code, signal) {
-    self.children[idx].state = CHILD_STATES.stopped;
-
-    self.emit('stopped',
-      { id: spec.id, idx: idx },
-      { code: code, signal: signal });
-  });
-
   this.children[idx].state = CHILD_STATES.running;
-  this.emit('running', { id: spec.id, idx: idx });
 
-  return idx;
+  this.children[idx].process = spawn('node', args, { stdio: 'ignore' });
+  this.children[idx].process.on('exit', onExit.bind(this));
+
+  this.emit('running', {
+    id: this.children[idx].id,
+    idx: idx,
+    pid: this.children[idx].process.pid });
+
+  return false;
 };
 
 /*
@@ -110,14 +151,21 @@ Supervisor.prototype.stopChild = function(idx) {
   }
 
   if(this.children[idx].state === CHILD_STATES.running) {
+    this.emit('debug', ['stopChild()', 'was running, setting to stopping']);
     this.children[idx].state = CHILD_STATES.stopping;
-
-    this.emit('stopping', {
-      id: this.children[idx].id, 
-      idx: idx });
-
-    this.children[idx].process.kill();
   }
+  else if(this.children[idx].state !== CHILD_STATES.restarting) {
+    return new Error('Child is not running or restarting');
+  }
+
+  this.emit('debug', ['stopChild()', idx, this.children[idx].state]);
+
+  this.emit('stopping', {
+    id: this.children[idx].id, 
+    idx: idx,
+    pid: this.children[idx].process.pid });
+
+  this.children[idx].process.kill();
 
   return false;
 };
@@ -140,13 +188,41 @@ Supervisor.prototype.deleteChild = function(idx) {
     return new Error('Child is not stopped');
   }
 
-  delete this.children[idx];
+  this.children[idx] = null;
 
   return false;
 };
 
+/*
+ * If successfully starts process, return false.
+ * If fails to start process, returns true.
+ * If fails asynchronously fails, emits an error.
+ */
 Supervisor.prototype.restartChild = function(idx) {
+  var err;
 
+  if(!this.children[idx]) {
+    return new Error('Child not found');
+  }
+
+  if(this.children[idx].state !== CHILD_STATES.running) {
+    return new Error('Child not running');
+  }
+
+  this.children[idx].state = CHILD_STATES.restarting;
+
+  this.emit('restarting', {
+    id: this.children[idx].id,
+    idx: idx });
+
+  err = this.stopChild(idx);
+
+  if(err) {
+    this.emit('error', err);
+    return err;
+  }
+
+  return false;
 };
 
 /*

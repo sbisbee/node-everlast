@@ -45,7 +45,7 @@ describe('Supervisor', function() {
         done();
       });
 
-      assert.strictEqual(sup.startChild(validSpec), 0);
+      assert.strictEqual(sup.startChild(validSpec), false);
     });
   });
 
@@ -101,6 +101,62 @@ describe('Supervisor', function() {
       for(i = 0; i < targetNum; i++) {
         sup.startChild(validServerSpec);
       }
+    });
+  });
+
+  describe('restartChild()', function() {
+    it('should stop the child, then start it, without a new child', function(done) {
+      var firstRun = true;
+      var sup = new Supervisor();
+      var pid;
+
+      sup.on('running', function(ref) {
+        if(firstRun) {
+          firstRun = false;
+          pid = ref.pid;
+          assert(!sup.restartChild(ref.idx));
+        }
+        else {
+          assert(ref.pid !== pid);
+          assert.strictEqual(ref.idx, 0);
+          assert.strictEqual(sup.children[1], undefined);
+
+          done();
+        }
+      });
+
+      assert(!sup.startChild(validServerSpec));
+    });
+
+    it('should only restart the child we tell it to', function(done) {
+      var firstRun = true;
+      var sup = new Supervisor();
+      var pid;
+
+      sup.on('running', function(ref) {
+        console.log('running', ref);
+
+        assert(ref.pid, sup.children[ref.idx].process.pid);
+
+        if(firstRun) {
+          if(ref.idx === 2) {
+            firstRun = false;
+            sup.restartChild(1);
+          }
+          else if(ref.idx === 1) {
+            pid = ref.pid;
+          }
+        }
+        else {
+          assert.strictEqual(ref.idx, 1);
+          assert(ref.pid !== pid);
+          done();
+        }
+      });
+
+      assert(!sup.startChild(validServerSpec));
+      assert(!sup.startChild(validServerSpec));
+      assert(!sup.startChild(validServerSpec));
     });
   });
 
