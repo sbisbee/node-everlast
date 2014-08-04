@@ -47,7 +47,6 @@ var Supervisor = function(restartStrategy, maxR, maxT) {
         break;
 
       case CHILD_STATES.restarting:
-        this.d
         err = this.startChild.call(this, ref.idx);
 
         if(err) {
