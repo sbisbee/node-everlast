@@ -119,8 +119,9 @@ used to trigger further actions, such as adding more children of that type.
 
 ```javascript
 {
-  id: string, //the same as the child spec you passed
-  idx: int //the internal index of the child, not available on `starting` event
+  id: string,   //the same as the child spec you passed
+  idx: int,     //the internal index of the child
+  pid: int      //the child's process's PID
 }
 ```
 
