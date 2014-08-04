@@ -134,8 +134,6 @@ describe('Supervisor', function() {
       var pid;
 
       sup.on('running', function(ref) {
-        console.log('running', ref);
-
         assert(ref.pid, sup.children[ref.idx].process.pid);
 
         if(firstRun) {
@@ -160,6 +158,34 @@ describe('Supervisor', function() {
     });
   });
 
+  describe('stopAllChildren()', function() {
+    it('should stop all children from right-to-left', function(done) {
+      var numKids = 3; //total number of kids to start
+      var next = numKids - 1; //the next kid idx we should see stop
+      var sup = new Supervisor();
+      var i;
+
+      sup.on('running', function(ref) {
+        if(ref.idx === numKids - 1) {
+          sup.stopAllChildren();
+        }
+      });
+
+      sup.on('stopping', function(ref) {
+        assert.strictEqual(ref.idx, next);
+        next--;
+
+        if(ref.idx === 0) {
+          done();
+        }
+      });
+
+      for(i = 0; i < numKids; i++) {
+        sup.startChild(validServerSpec);
+      }
+    });
+  });
+
   describe('countChildren()', function() {
     it('should count children', function() {
       var sup = new Supervisor();
@@ -175,6 +201,8 @@ describe('Supervisor', function() {
 
       sup.on('stopped', function() {
         assert.strictEqual(sup.countChildren(), 2);
+
+        sup.stopAllChildren();
 
         done();
       });

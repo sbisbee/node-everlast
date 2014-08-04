@@ -20,6 +20,11 @@ var CHILD_STATES = {
   'stopped': 50
 };
 
+//while dirty, this is the fastest way to do a deep clone
+var cloneObject = function(obj) {
+  return JSON.parse(JSON.stringify(obj));
+};
+
 /*
  * opts:
  *   - maxRetries = int
@@ -35,13 +40,8 @@ var Supervisor = function(opts) {
     this.emit('debug', [ 'onStopped', ref.idx, this.children[ref.idx].state ]);
 
     switch(this.children[ref.idx].state) {
-      case CHILD_STATES.stopped:
-        fun = this.deleteChild;
-        break;
-
-      case CHILD_STATES.restarting:
-        fun = this.startChild;
-        break;
+      case CHILD_STATES.stopped:        fun = this.deleteChild; break;
+      case CHILD_STATES.restarting:     fun = this.startChild;  break;
 
       default:
         this.emit('error', new Error('onStopped unexpected event state'));
@@ -102,7 +102,7 @@ Supervisor.prototype.startChild = function(spec) {
     this.children[idx].process = null;
   }
   else if(this.checkChildSpecs([ spec ])) {
-    idx = this.children.push(spec) - 1;
+    idx = this.children.push(cloneObject(spec)) - 1;
     this.children[idx].state = CHILD_STATES.starting;
   }
   else {
@@ -150,15 +150,21 @@ Supervisor.prototype.stopChild = function(idx) {
     return new Error('Child not found');
   }
 
-  if(this.children[idx].state === CHILD_STATES.running) {
-    this.emit('debug', ['stopChild()', 'was running, setting to stopping']);
-    this.children[idx].state = CHILD_STATES.stopping;
-  }
-  else if(this.children[idx].state !== CHILD_STATES.restarting) {
-    return new Error('Child is not running or restarting');
+  this.emit('debug', ['stopChild()', idx, this.children[idx].state]);
+
+  //Already stopping, so bail successfully
+  if(this.children[idx].state >= CHILD_STATES.stopping) {
+    return false;
   }
 
-  this.emit('debug', ['stopChild()', idx, this.children[idx].state]);
+  if(this.children[idx].state < CHILD_STATES.running) {
+    return new Error('Cannot stop a child before it is running');
+  }
+
+  if(this.children[idx].state !== CHILD_STATES.restarting) {
+    this.emit('debug', ['boom', idx]);
+    this.children[idx].state = CHILD_STATES.stopping;
+  }
 
   this.emit('stopping', {
     id: this.children[idx].id, 
@@ -220,6 +226,31 @@ Supervisor.prototype.restartChild = function(idx) {
   if(err) {
     this.emit('error', err);
     return err;
+  }
+
+  return false;
+};
+
+/*
+ * Iterates right-to-left across the children and stops them. If stopChild()
+ * returns an error then it will be emit()'d.
+ *
+ * Always returns false.
+ */
+Supervisor.prototype.stopAllChildren = function() {
+  var idx;
+  var err;
+
+  for(idx = this.children.length - 1; idx >= 0; idx--) {
+    if(this.children.hasOwnProperty(idx) && this.children[idx]) {
+      this.emit('debug', ['stopAllChildren()', idx]);
+
+      err = this.stopChild(idx);
+
+      if(err) {
+        this.emit('error', err);
+      }
+    }
   }
 
   return false;
