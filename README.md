@@ -6,6 +6,11 @@ instead of a CLI. It allows you to spawn children processes based on
 specifications and define restart strategies. It is inspired by Erlang's
 supervisor.
 
+For example, this would make starting and managing a worker process per core
+very easy. Other tools in this area exist, but they can be unstable, are
+designed to be used from the CLI, or are weak alternatives to runit which
+solves a different problem.
+
 One major difference between this supervisor and Erlang's is that you can stop
 a child, though the restart strategy will still kick in. If this is not
 desirable then you can set the strategy to Never, so it'll never trigger
@@ -19,9 +24,10 @@ Installing
 Using
 -----
 
-See `./examples/run.js` for a quick code example.
+See `./examples/run.js` for a quick code example and `./tests/Supervisor.js`
+for more complicated examples. Plenty of documentation below.
 
-See `./tests/Supervisor.js` for more complicated examples.
+Run `npm test` to run the unit tests.
 
 Supervisor
 ----------
@@ -70,7 +76,26 @@ These events are emitted:
     might help you if you find a bug. Generally don't listen to it, especially
     in production.
 
-All functions return `false` on success and a new `Error` on failure.
+All functions return `false` on success and a new `Error` on failure. See
+`./src/Supervisor.js` for more detailed per function documentation.
+
+  - **startChild(spec)** - Starts the child
+
+  - **stopChild(idx)** - Stops the child, then deletes it.
+
+  - **restartChild(idx)** - Restarts the child, settings its state to `restarting`
+
+  - **stopAllChildren(idxIgnores)** - Stops all the children from
+    right-to-left, skipping any indexes in the `idxIgnores` array
+
+  - **deleteChild(idx)** - Deletes the child, which must be stopped
+
+  - **countChildren()** - Returns a count for the children regardless of their
+    state
+
+  - **checkChildSpecs(specs)** - Takes an array of child specs and validates them.
+
+  - **getRestartStrategy()** - Returns the current restart strategy.
 
 Child Spec
 ----------
@@ -126,3 +151,4 @@ if you've used Erlang's supervisor.
 
   - OneForAll and RestForOne strategies
   - Allow children to be another Supervisor, enabling multi-level trees
+  - Implement checkChildSpecs()
