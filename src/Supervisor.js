@@ -147,9 +147,12 @@ Supervisor.prototype.startChild = function(spec) {
 };
 
 /*
- * Takes the child index and stops it.
+ * Takes the child index and restarts it, but only if it's running or stopped.
  *
- * If success, returns false (includes the child already being stopped)
+ * If the child is already stopped, then a 'stopped' event is still emitted and
+ * 'false' is returned.
+ *
+ * If success, returns false
  * If failure, returns Error (ex., couldn't find the child)
  */
 Supervisor.prototype.stopChild = function(idx) {
@@ -165,8 +168,12 @@ Supervisor.prototype.stopChild = function(idx) {
 
   this.emit('debug', ['stopChild()', idx, this.children[idx].state]);
 
-  //Already stopping, so bail successfully
   if(this.children[idx].state >= CHILD_STATES.stopping) {
+    this.emit('stopped', {
+      id: this.children[idx].id,
+      idx: idx,
+      pid: this.children[idx].process.pid });
+
     return false;
   }
 
@@ -223,8 +230,9 @@ Supervisor.prototype.restartChild = function(idx) {
     return new Error('Child not found');
   }
 
-  if(this.children[idx].state !== CHILD_STATES.running) {
-    return new Error('Child not running');
+  if(this.children[idx].state !== CHILD_STATES.running &&
+      this.children[idx].state !== CHILD_STATES.stopped) {
+    return new Error('Child must be running or stopped');
   }
 
   this.children[idx].state = CHILD_STATES.restarting;
