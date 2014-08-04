@@ -2,6 +2,7 @@ var assert = require('assert');
 var util = require('util');
 
 var Supervisor = require('..').Supervisor;
+var Never = require('..').restartStrategies.Never;
 
 var validSpec = {
   id: 'spew-brief',
@@ -24,11 +25,17 @@ describe('Supervisor', function() {
       assert(util.isArray(sup.children));
       assert.strictEqual(sup.children.length, 0);
     });
+
+    it('should set the strategy', function() {
+      var sup = new Supervisor(Never);
+      var strat = sup.getRestartStrategy();
+      assert.ok(sup.restartStrategy instanceof Never);
+    });
   });
 
   describe('startChild()', function() {
     it('should add the child', function(done) {
-      var sup = new Supervisor();
+      var sup = new Supervisor(Never);
       var sawStarting = false;
 
       sup.on('starting', function() {
@@ -51,7 +58,7 @@ describe('Supervisor', function() {
 
   describe('stopChild()', function() {
     it('should stop a long running child', function(done) {
-      var sup = new Supervisor();
+      var sup = new Supervisor(Never);
 
       sup.on('running', function(ref) {
         var err;
@@ -76,7 +83,7 @@ describe('Supervisor', function() {
     });
 
     it('should stop the proper child', function(done) {
-      var sup = new Supervisor();
+      var sup = new Supervisor(Never);
 
       var startCount = 0;
       var targetNum = 4;
@@ -107,7 +114,7 @@ describe('Supervisor', function() {
   describe('restartChild()', function() {
     it('should stop the child, then start it, without a new child', function(done) {
       var firstRun = true;
-      var sup = new Supervisor();
+      var sup = new Supervisor(Never);
       var pid;
 
       sup.on('running', function(ref) {
@@ -120,6 +127,8 @@ describe('Supervisor', function() {
           assert(ref.pid !== pid);
           assert.strictEqual(ref.idx, 0);
           assert.strictEqual(sup.children[1], undefined);
+
+          sup.stopChild(0);
 
           done();
         }
@@ -224,9 +233,11 @@ describe('Supervisor', function() {
     });
 
     it('should not count empty array slots', function(done) {
-      var sup = new Supervisor();
+      var sup = new Supervisor(Never);
 
-      sup.on('stopped', function() {
+      sup.on('stopped', function(ref) {
+        assert.strictEqual(ref.idx, 1);
+        assert(!sup.deleteChild(1));
         assert.strictEqual(sup.countChildren(), 2);
 
         sup.stopAllChildren();

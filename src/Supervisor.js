@@ -2,6 +2,8 @@ var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 var spawn = require('child_process').spawn;
 
+var restartStrategies = require('./restartStrategies');
+
 // Progressive states of a child. The keys are also Supervisor events.
 var CHILD_STATES = {
   //invoked childStart()
@@ -25,14 +27,7 @@ var cloneObject = function(obj) {
   return JSON.parse(JSON.stringify(obj));
 };
 
-/*
- * opts:
- *   - maxRetries = int
- *   - maxTime = int
- *   - restartStrategy = object
- */
-//TODO document events' args
-var Supervisor = function(opts) {
+var Supervisor = function(restartStrategy, maxR, maxT) {
   var onStopped = function(ref) {
     var err;
     var fun;
@@ -40,18 +35,29 @@ var Supervisor = function(opts) {
     this.emit('debug', [ 'onStopped', ref.idx, this.children[ref.idx].state ]);
 
     switch(this.children[ref.idx].state) {
-      case CHILD_STATES.stopped:        fun = this.deleteChild; break;
-      case CHILD_STATES.restarting:     fun = this.startChild;  break;
+      case CHILD_STATES.stopped:
+        //TODO implement maxRetries and maxTime
+        if(this.restartStrategy) {
+          this.restartStrategy.process(ref.idx);
+        }
+        else {
+          this.emit('debug', 'no restartStrategy onStopped');
+        }
+
+        break;
+
+      case CHILD_STATES.restarting:
+        this.d
+        err = this.startChild.call(this, ref.idx);
+
+        if(err) {
+          this.emit('error', err);
+        }
+        break;
 
       default:
         this.emit('error', new Error('onStopped unexpected event state'));
         return;
-    }
-
-    err = fun.call(this, ref.idx);
-
-    if(err) {
-      this.emit('error', err);
     }
   };
 
@@ -60,9 +66,8 @@ var Supervisor = function(opts) {
   //list of child specs
   this.children = [];
 
-  opts = opts || {};
-  this.maxRetries = opts.maxRetries || 3;
-  this.maxTime = opts.maxTime = 3;
+  //the strat will take care of default maxR and maxT
+  this.restartStrategy = new (restartStrategy || restartStrategies.OneForOne)(this, maxR, maxT);
 
   this.on('stopped', onStopped.bind(this));
 };
@@ -70,6 +75,14 @@ var Supervisor = function(opts) {
 util.inherits(Supervisor, EventEmitter);
 
 /*
+ * Starts the child. If a spec is passed, then a new child is added and
+ * started. If a number is passed, then we attempt to start an existing child
+ * at that index - this only works if the child is stopped or as part of the
+ * restarting flow.
+ *
+ * It is not recommended that you attempt to start an existing child yourself -
+ * calling restartChild() is safer.
+ *
  * On success, returns false
  * On failure, returns Error
  */
@@ -94,8 +107,9 @@ Supervisor.prototype.startChild = function(spec) {
     if(!this.children[idx]) {
       return new Error('Child not found');
     }
-    else if(this.children[idx].state !== CHILD_STATES.restarting) {
-      return new Error('That child is not restarting');
+    else if(this.children[idx].state !== CHILD_STATES.stopped &&
+        this.children[idx].state !== CHILD_STATES.restarting) {
+      return new Error('That child is not stopped or restarting');
     }
 
     this.children[idx].process.removeAllListeners();
@@ -162,7 +176,6 @@ Supervisor.prototype.stopChild = function(idx) {
   }
 
   if(this.children[idx].state !== CHILD_STATES.restarting) {
-    this.emit('debug', ['boom', idx]);
     this.children[idx].state = CHILD_STATES.stopping;
   }
 
@@ -232,15 +245,21 @@ Supervisor.prototype.restartChild = function(idx) {
 };
 
 /*
+ * Assumes you will never want to start another child, whether it's already
+ * added or not.
+ *
  * Iterates right-to-left across the children and stops them. If stopChild()
  * returns an error then it will be emit()'d.
  *
  * You can pass an array of indexes to ignore. Ex., if you want to stop all
  * children except indexes 2 and 5, then `sup.stopAllChildren([2, 5])`
  *
+ * WARNING: This unsets the restart strategy.
+ *
  * Returns false on success, stopChild() errors will be emit()'d
  * Returns Error on failure, such as if you pass a non-null and non-array
  */
+
 Supervisor.prototype.stopAllChildren = function(idxIgnores) {
   var idx;
   var err;
@@ -251,6 +270,8 @@ Supervisor.prototype.stopAllChildren = function(idxIgnores) {
   else if(!util.isArray(idxIgnores)) {
     return new Error('idxIgnores must be an array or null');
   }
+
+  this.restartStrategy = null;
 
   for(idx = this.children.length - 1; idx >= 0; idx--) {
     if(this.children[idx] && idxIgnores.indexOf(idx) < 0) {
@@ -301,6 +322,10 @@ Supervisor.prototype.checkChildSpecs = function(specs) {
 
   //TODO implement
   return true;
+};
+
+Supervisor.prototype.getRestartStrategy = function() {
+  return this.restartStrategy;
 };
 
 module.exports = Supervisor;
