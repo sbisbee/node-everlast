@@ -184,6 +184,33 @@ describe('Supervisor', function() {
         sup.startChild(validServerSpec);
       }
     });
+
+    it('should skip the children we tell it to ignore', function(done) {
+      var skip = 1;
+      var numKids = 3;
+      var sup = new Supervisor();
+      var i;
+
+      sup.on('running', function(ref) {
+        if(ref.idx === numKids - 1) {
+          sup.stopAllChildren([skip]);
+        }
+      });
+
+      sup.on('stopping', function(ref) {
+        assert(ref.idx !== skip);
+
+        if(ref.idx === numKids - 1) {
+          sup.removeAllListeners('stopping');
+          sup.stopChild(skip);
+          done();
+        }
+      });
+
+      for(i = 0; i < numKids; i++) {
+        sup.startChild(validServerSpec);
+      }
+    });
   });
 
   describe('countChildren()', function() {

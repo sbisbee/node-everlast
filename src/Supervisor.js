@@ -235,14 +235,25 @@ Supervisor.prototype.restartChild = function(idx) {
  * Iterates right-to-left across the children and stops them. If stopChild()
  * returns an error then it will be emit()'d.
  *
- * Always returns false.
+ * You can pass an array of indexes to ignore. Ex., if you want to stop all
+ * children except indexes 2 and 5, then `sup.stopAllChildren([2, 5])`
+ *
+ * Returns false on success, stopChild() errors will be emit()'d
+ * Returns Error on failure, such as if you pass a non-null and non-array
  */
-Supervisor.prototype.stopAllChildren = function() {
+Supervisor.prototype.stopAllChildren = function(idxIgnores) {
   var idx;
   var err;
 
+  if(!idxIgnores) {
+    idxIgnores = [];
+  }
+  else if(!util.isArray(idxIgnores)) {
+    return new Error('idxIgnores must be an array or null');
+  }
+
   for(idx = this.children.length - 1; idx >= 0; idx--) {
-    if(this.children.hasOwnProperty(idx) && this.children[idx]) {
+    if(this.children[idx] && idxIgnores.indexOf(idx) < 0) {
       this.emit('debug', ['stopAllChildren()', idx]);
 
       err = this.stopChild(idx);
