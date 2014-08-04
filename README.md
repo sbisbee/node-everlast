@@ -150,6 +150,5 @@ TODO
 A list of features that will be implemented which you might expect, especially
 if you've used Erlang's supervisor.
 
-  - OneForAll and RestForOne strategies
   - Allow children to be another Supervisor, enabling multi-level trees
   - Implement checkChildSpecs()
