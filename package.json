@@ -1,6 +1,6 @@
 {
-  "name": "esup",
-  "version": "0.0.0",
+  "name": "everlast",
+  "version": "0.1.0",
   "description": "Erlang inspired supervisor for Node.js.",
   "main": "index.js",
   "author": "Sam Bisbee <sam@sbisbee.com (http://www.sbisbee.com)",
@@ -13,5 +13,7 @@
 
   "scripts": {
     "test": "make check"
-  }
+  },
+
+  "tags": ["supervisor", "erlang", "run"]
 }

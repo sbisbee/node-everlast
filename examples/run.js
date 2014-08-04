@@ -1,9 +1,9 @@
-var esup = require('../');
+var everlast = require('../');
 
 var NUM_KIDS = 4;
 var STARTING_PORT = 8080;
 
-var sup = new esup.Supervisor();
+var sup = new everlast.Supervisor();
 
 var serverSpec = {
   id: 'httpd',
