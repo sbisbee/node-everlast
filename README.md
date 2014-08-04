@@ -32,7 +32,7 @@ The children are managed in an array. When interacting with the supervisor you
 typically pass it a child index since multiple children can, and likely will,
 share an id. For example:
 
-``javascript
+```javascript
 var everlast = require('everlast');
 var sup = new everlast.Supervisor(); //uses OneForOne(3, 1) by default
 
@@ -46,7 +46,7 @@ sup.on('stopping', function(ref) {
 });
 
 sup.startChild({ id: 'http', path: './server.js' });
-``
+```
 
 See **Child Reference** below.
 
@@ -78,13 +78,13 @@ Child Spec
 This is the structure passed to `startChild()` to define how the child will
 behave.
 
-``javascript
+```javascript
 {
   id: string,   //the id, typically something like "web-server"
   path: string, //the path to the server (ex., `process.cwd() + '/bin/run.js'`)
   args: []      //optional, passed to `child_process.spawn()`
 }
-``
+```
 
 Child Reference
 ---------------
@@ -92,12 +92,12 @@ Child Reference
 This is the structure passed in all child events. The index (`idx`) can then be
 used to trigger further actions, such as adding more children of that type.
 
-``javascript
+```javascript
 {
   id: string, //the same as the child spec you passed
   idx: int //the internal index of the child, not available on `starting` event
 }
-``
+```
 
 Restart Strategies
 ------------------
