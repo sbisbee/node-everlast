@@ -316,18 +316,59 @@ Supervisor.prototype.countChildren = function() {
 /*
  * child spec:
  *   - id = string
- *   - start = string (path)
+ *   - path = string
  *   - args = array
  *
  *   - process = ChildProcess object, added by supervisor only
  *   - state = current CHILD_STATES, touched by supervisor only
  */
 Supervisor.prototype.checkChildSpecs = function(specs) {
+  var i;
+  var val;
+  var key;
+  var ranOnce = false;
+
   if(!util.isArray(specs)) {
     throw new TypeError('specs must be an array');
   }
 
-  //TODO implement
+  //loop the array - would Array.forEach but we want to return mid-loop
+  for(i = 0; i < specs.length; i++) {
+    ranOnce = false;
+
+    //loop the spec object's properties
+    for(key in specs[i]) {
+      if(specs[i].hasOwnProperty(key)) {
+        //we saw at least one property
+        ranOnce = true;
+
+        switch(key) {
+          case 'id':
+          case 'path':
+            if(!specs[i][key] || typeof specs[i][key] !== 'string') {
+              return false;
+            }
+            break;
+
+          case 'args':
+            //optional
+            if(specs[i][key] && !util.isArray(specs[i][key])) {
+              return false;
+            }
+            break;
+
+          //unexpected property - might be a typo
+          default:
+            return false;
+        }
+      }
+    }
+
+    if(!ranOnce) {
+      return false;
+    }
+  }
+
   return true;
 };
 

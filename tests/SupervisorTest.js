@@ -254,4 +254,19 @@ describe('Supervisor', function() {
       sup.stopChild(1); //middle
     });
   });
+
+  describe('checkChildSpecs()', function() {
+    it('should accept these', function() {
+      var sup = new Supervisor();
+      assert.ok(sup.checkChildSpecs([ validSpec, validServerSpec ]));
+    });
+
+    it('should not accept these', function() {
+      var sup = new Supervisor();
+      assert.ok(!sup.checkChildSpecs([{}]));
+      assert.ok(!sup.checkChildSpecs([{bwah: 'foo'}]));
+      assert.ok(!sup.checkChildSpecs([{path: 123}]));
+      assert.ok(!sup.checkChildSpecs([{path: 123, foo: 'bar'}]));
+    });
+  });
 });
