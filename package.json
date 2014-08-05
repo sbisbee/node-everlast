@@ -5,6 +5,10 @@
   "main": "index.js",
   "author": "Sam Bisbee <sam@sbisbee.com (http://www.sbisbee.com)",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/sbisbee/node-everlast.git"
+  },
 
   "dependencies": {},
   "devDependencies": {
