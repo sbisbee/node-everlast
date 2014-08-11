@@ -27,6 +27,20 @@ var cloneObject = function(obj) {
   return JSON.parse(JSON.stringify(obj));
 };
 
+var extendObject = function(dst, src) {
+  var i;
+
+  if(typeof src === 'object') {
+    for(i in src) {
+      if(src.hasOwnProperty(i)) {
+        dst[i] = src[i];
+      }
+    }
+  }
+
+  return dst;
+};
+
 var Supervisor = function(restartStrategy, maxR, maxT) {
   var onStopped = function(ref) {
     var err;
@@ -88,6 +102,7 @@ util.inherits(Supervisor, EventEmitter);
 Supervisor.prototype.startChild = function(spec) {
   var args;
   var idx;
+  var env;
 
   var onExit = function(code, signal) {
     if(this.children[idx].state !== CHILD_STATES.restarting) {
@@ -133,9 +148,15 @@ Supervisor.prototype.startChild = function(spec) {
     args = args.concat(this.children[idx].args);
   }
 
+  //make sure we pass on the current process's env vars, plus our own
+  env = extendObject(this.children[idx].env || {}, cloneObject(process.env));
+  env.EVERLAST_ID = this.children[idx].id;
+  env.EVERLAST_IDX = idx;
+
   this.children[idx].state = CHILD_STATES.running;
 
-  this.children[idx].process = spawn('node', args, { stdio: 'ignore' });
+  this.children[idx].process = spawn('node', args, {
+    env: env, stdio: 'ignore' });
   this.children[idx].process.on('exit', onExit.bind(this));
 
   this.emit('running', {
@@ -353,6 +374,13 @@ Supervisor.prototype.checkChildSpecs = function(specs) {
           case 'args':
             //optional
             if(specs[i][key] && !util.isArray(specs[i][key])) {
+              return false;
+            }
+            break;
+
+          case 'env':
+            //optional
+            if(specs[i][key] && typeof specs[i][key] !== 'object') {
               return false;
             }
             break;

@@ -1,5 +1,6 @@
 var assert = require('assert');
 var util = require('util');
+var fs = require('fs');
 
 var Supervisor = require('..').Supervisor;
 var Never = require('..').restartStrategies.Never;
@@ -53,6 +54,38 @@ describe('Supervisor', function() {
       });
 
       assert.strictEqual(sup.startChild(validSpec), false);
+    });
+
+    it('should add the child with env variables', function(done) {
+      var sup = new Supervisor(Never);
+
+      var spec = JSON.parse(JSON.stringify(validServerSpec));
+      spec.env = { BWAH: 123 };
+
+      sup.on('starting', function(ref) {
+        console.log('starting', ref);
+      });
+
+      sup.on('running', function(ref) {
+        var pid = sup.children[ref.idx].process.pid;
+
+        assert.strictEqual(ref.id, spec.id);
+        assert.ok(pid);
+
+        fs.readFile('/proc/' + pid + '/environ', 'utf8', function(err, data) {
+          if(err) {
+            throw err;
+          }
+
+          assert(data.indexOf('EVERLAST_ID=' + ref.id) >= 0);
+          assert(data.indexOf('EVERLAST_IDX=' + ref.idx) >= 0);
+          assert(data.indexOf('BWAH=123') >= 0);
+
+          done();
+        });
+      });
+
+      assert.strictEqual(sup.startChild(spec), false);
     });
   });
 
@@ -259,6 +292,7 @@ describe('Supervisor', function() {
     it('should accept these', function() {
       var sup = new Supervisor();
       assert.ok(sup.checkChildSpecs([ validSpec, validServerSpec ]));
+      assert.ok(sup.checkChildSpecs([{ id: 'foo', path: 'bar', env: {} }]));
     });
 
     it('should not accept these', function() {
@@ -267,6 +301,7 @@ describe('Supervisor', function() {
       assert.ok(!sup.checkChildSpecs([{bwah: 'foo'}]));
       assert.ok(!sup.checkChildSpecs([{path: 123}]));
       assert.ok(!sup.checkChildSpecs([{path: 123, foo: 'bar'}]));
+      assert.ok(!sup.checkChildSpecs([{path: 'foo', id: 'bar', env: [] }]));
     });
   });
 });

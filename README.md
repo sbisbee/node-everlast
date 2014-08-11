@@ -113,7 +113,8 @@ behave.
 {
   id: string,   //the id, typically something like "web-server"
   path: string, //the path to the server (ex., `process.cwd() + '/bin/run.js'`)
-  args: []      //optional, passed to `child_process.spawn()`
+  args: []      //optional, passed to `child_process.spawn()`,
+  env: {}       //optional, extends process.env, passed to `child_process.spawn()`
 }
 ```
 
@@ -130,8 +131,10 @@ used to trigger further actions, such as adding more children of that type.
   pid: int,     //the child's process's PID
 
   //Internal to Supervisor only (never sent outside):
+  args: [],     //from child spec
+  env: {},      //from child spec
   process: ChildProcess, //return value from `child_process.spawn()`
-  state: int    //array from CHILD_STATES
+  state: int    //array index from CHILD_STATES
 }
 ```
 
