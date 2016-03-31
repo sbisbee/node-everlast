@@ -302,6 +302,8 @@ describe('Supervisor', function() {
       assert.ok(!sup.checkChildSpecs([{path: 123}]));
       assert.ok(!sup.checkChildSpecs([{path: 123, foo: 'bar'}]));
       assert.ok(!sup.checkChildSpecs([{path: 'foo', id: 'bar', env: [] }]));
+      assert.ok(!sup.checkChildSpecs([{path: 'foo', id: 'bar', args: true }]));
+      assert.ok(!sup.checkChildSpecs([{path: 'foo', id: 'bar', unexpected: 'prop' }]));
     });
   });
 });

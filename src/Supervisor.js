@@ -374,14 +374,14 @@ Supervisor.prototype.checkChildSpecs = function(specs) {
 
           case 'args':
             //optional
-            if(specs[i][key] && !util.isArray(specs[i][key])) {
+            if(specs[i][key] && !Array.isArray(specs[i][key])) {
               return false;
             }
             break;
 
           case 'env':
             //optional
-            if(specs[i][key] && typeof specs[i][key] !== 'object') {
+            if(specs[i][key] && specs[i][key].constructor !== Object) {
               return false;
             }
             break;
