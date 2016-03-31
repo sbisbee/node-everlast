@@ -143,7 +143,7 @@ Supervisor.prototype.startChild = function(spec) {
   this.emit('starting', { id: this.children[idx].id });
 
   args = [ this.children[idx].path ];
-  
+
   if(this.children[idx].args) {
     args = args.concat(this.children[idx].args);
   }
@@ -155,9 +155,10 @@ Supervisor.prototype.startChild = function(spec) {
 
   this.children[idx].state = CHILD_STATES.running;
 
-  this.children[idx].process = spawn('node', args, {
-    env: env, stdio: 'ignore' });
+  this.children[idx].process = spawn('node', args, { env: env });
   this.children[idx].process.on('exit', onExit.bind(this));
+  this.children[idx].process.stdout.pipe(process.stdout);
+  this.children[idx].process.stderr.pipe(process.stderr);
 
   this.emit('running', {
     id: this.children[idx].id,

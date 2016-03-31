@@ -171,8 +171,9 @@ The strategies:
 Child Spawning
 --------------
 
-Children are spawned with `child_process.spawn()` and their stdio is ignored.
-So, don't rely on stdout for logging and use a proper logging system instead.
+Children are spawned with `child_process.spawn()`. Their stdout and stderr
+streams are piped to the process's respective stdout and stderr without
+modification.
 
 TODO
 ----
