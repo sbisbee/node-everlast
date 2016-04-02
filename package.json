@@ -1,6 +1,6 @@
 {
   "name": "everlast",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Erlang inspired supervisor for Node.js.",
   "main": "index.js",
   "author": "Sam Bisbee <sam@sbisbee.com (http://www.sbisbee.com)",
