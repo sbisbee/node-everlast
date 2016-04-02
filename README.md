@@ -71,6 +71,8 @@ These events are emitted:
     `restartChild()` or the restart strategy.
   - **stopped** - A child is stopped. See the context for whether the restart
     strategy will attempt to revive the child.
+  - **down** - A child is stopped and won't be restarted due to the strategy's
+    constraints (max time and retries).
 
 General events:
 
@@ -91,6 +93,8 @@ All functions return `false` on success and a new `Error` on failure. See
     right-to-left, skipping any indexes in the `idxIgnores` array.
 
   - **deleteChild(idx)** - Deletes the child, which must be already stopped.
+
+  - **getChild(idx)** - Retrieves the current child ref.
 
   - **countChildren()** - Returns a count for the children regardless of their
     statel

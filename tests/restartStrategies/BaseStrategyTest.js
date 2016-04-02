@@ -42,5 +42,16 @@ describe('BaseStrategy', function() {
 
       assert.strictEqual(strat.log[1].length, 3);
     });
+
+    it('emits the down event if not restart worthy', function(done) {
+      //OneForOne, 3, 1
+      var sup = new Supervisor();
+      sup.on('down', function(ref) {
+        assert.equal(ref.id, 'NOOP');
+        assert.strictEqual(ref.idx, 0);
+        done();
+      });
+      sup.startChild({ id: 'NOOP', path: 'NOOP' });
+    });
   });
 });
