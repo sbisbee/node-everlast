@@ -30,7 +30,7 @@ describe('Supervisor', function() {
     it('should set the strategy', function() {
       var sup = new Supervisor(Never);
       var strat = sup.getRestartStrategy();
-      assert.ok(sup.restartStrategy instanceof Never);
+      assert.ok(strat instanceof Never);
     });
   });
 
@@ -123,7 +123,7 @@ describe('Supervisor', function() {
       var idxToStop = 2;
       var i;
 
-      sup.on('running', function(ref) {
+      sup.on('running', function() {
         if(startCount === idxToStop) {
           sup.on('stopped', function(ref) {
             assert.strictEqual(ref.idx, idxToStop);

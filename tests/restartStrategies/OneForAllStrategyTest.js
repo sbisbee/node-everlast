@@ -1,5 +1,4 @@
 var assert = require('assert');
-var util = require('util');
 
 var Base = require('../..').restartStrategies.Base;
 var OneForAll = require('../..').restartStrategies.OneForAll;

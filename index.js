@@ -1,2 +1,2 @@
-module.exports.Supervisor = require('./src/Supervisor.js');
-module.exports.restartStrategies = require('./src/restartStrategies/');
+module.exports.Supervisor = require('./lib/Supervisor.js');
+module.exports.restartStrategies = require('./lib/restartStrategies/');
