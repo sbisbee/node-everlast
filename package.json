@@ -12,11 +12,24 @@
 
   "dependencies": {},
   "devDependencies": {
-    "mocha": "1.21.x"
+    "jshint": "2.9.1",
+    "mocha": "2.2.4"
   },
 
   "scripts": {
-    "test": "make check"
+    "pretest": "./node_modules/.bin/jshint ./lib/ ./tests/",
+    "test": "mocha --recursive ./tests"
+  },
+  "jshintConfig": {
+    "curly": true,
+    "forin": true,
+    "freeze": true,
+    "mocha": true,
+    "newcap": true,
+    "node": true,
+    "shadow": true,
+    "undef": true,
+    "unused": true
   },
 
   "tags": ["supervisor", "erlang", "run"]
