@@ -62,10 +62,6 @@ describe('Supervisor', function() {
       var spec = JSON.parse(JSON.stringify(validServerSpec));
       spec.env = { BWAH: 123 };
 
-      sup.on('starting', function(ref) {
-        console.log('starting', ref);
-      });
-
       sup.on('running', function(ref) {
         var pid = sup.children[ref.idx].process.pid;
 

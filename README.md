@@ -76,9 +76,6 @@ General events:
 
   - **error** - Your typical Node.js error event. The only arg is a `Error`.
     Used when an asynchronous process hits an error and can't return it to you.
-  - **debug** - No promises made about this event. Used by the developer and
-    might help you if you find a bug. Generally don't listen to it, especially
-    in production.
 
 All functions return `false` on success and a new `Error` on failure. See
 `./src/Supervisor.js` for more detailed per function documentation.
