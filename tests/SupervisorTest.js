@@ -265,8 +265,8 @@ describe('Supervisor', function() {
       var sup = new Supervisor(Never);
 
       sup.on('stopped', function(ref) {
-        assert.strictEqual(ref.idx, 1);
-        assert(!sup.deleteChild(1));
+        assert(ref.idx >= 0 && ref.idx < 3);
+        assert(!sup.deleteChild(ref.idx));
         assert.strictEqual(sup.countChildren(), 2);
 
         sup.stopAllChildren();
