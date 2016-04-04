@@ -176,6 +176,28 @@ Children are spawned with `child_process.spawn()`. Their stdout and stderr
 streams are piped to the process's respective stdout and stderr without
 modification.
 
+If you tell it to, Supervisor will augment the log lines by replacing `%s` with
+the child process's id and PID. For example:
+
+```javascript
+//parent.js
+var sup = new Supervisor(null, 3, 2, true);
+sup.on('running', function(ref) {
+  console.log('running with pid', ref.pid);
+});
+sup.startChild({ id: 'foo', path: './child.js' });
+
+//child.js
+console.log('[%s] doing something');
+```
+
+The resulting output would be:
+
+```
+running with pid 123
+[foo@123] doing something
+```
+
 TODO
 ----
 
