@@ -23,9 +23,9 @@ describe('BaseStrategy', function() {
       var sup = new Supervisor(BaseStrategy, 3, 1);
       var strat = sup.getRestartStrategy();
 
-      assert.ok(strat.mark(1, 100)); //1
-      assert.ok(strat.mark(1, 100)); //1,1
-      assert.ok(!strat.mark(1, 100)); //1,1,1
+      assert.ok(strat.mark(1, 1000));   //1
+      assert.ok(strat.mark(1, 1000));   //1,1
+      assert.ok(!strat.mark(1, 1000));  //1,1,1
 
       assert.strictEqual(strat.log[1].length, 3);
     });
@@ -34,11 +34,11 @@ describe('BaseStrategy', function() {
       var sup = new Supervisor(BaseStrategy, 3, 1);
       var strat = sup.getRestartStrategy();
 
-      assert.ok(strat.mark(1, 100));    //1
-      assert.ok(strat.mark(1, 100));    //1,1
-      assert.ok(!strat.mark(1, 200));   //1,1,2
-      assert.ok(strat.mark(1, 300));    //1,2,3
-      assert.ok(!strat.mark(1, 300));   //2,3,3
+      assert.ok(strat.mark(1, 1000));    //1
+      assert.ok(strat.mark(1, 1000));    //1,1
+      assert.ok(!strat.mark(1, 2000));   //1,1,2
+      assert.ok(strat.mark(1, 3000));    //1,2,3
+      assert.ok(!strat.mark(1, 3000));   //2,3,3
 
       assert.strictEqual(strat.log[1].length, 3);
     });
